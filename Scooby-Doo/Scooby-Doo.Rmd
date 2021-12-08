@@ -1,0 +1,201 @@
+---
+title: "Analyzing The Scoob-a-Verse"
+output:
+  html_document:
+    df_print: paged
+  
+---
+
+<p> Coded by </p>
+- Kory Emulut
+- Abigail Falikson
+- Jacob Zukas
+- Ethan Kaplan
+
+ <h4> Loading the necessary libraries </h4>
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(dplyr)
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2021-07-13')
+tuesdata <- tidytuesdayR::tt_load(2021, week = 29)
+scoobydoo <- tuesdata$scoobydoo
+scoobydoo <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-13/scoobydoo.csv')
+```
+<h4> Our dataset using the episodes and movies of Scooby-doo </h4>
+```{r}
+scoobydoo
+```
+
+<h4> The following visualization shows the types and the most perpetrated crimes that supposed professions in the Scooby Doo universe have done. Using `str_detect()` and summarizing the counts, each respectful profession was accounted for. Theft seems to be the most perpetrated, with Treasure as second and Competition as third. This shows how society in the Scooby Doo Universe doesn't exactly reward the creative minds in It's world, as they have to continuously commit crimes instead of teaching future generations, being celebrated for serving their country, and doing work to improve knowledge. </h4>
+
+```{r}
+prof <- scoobydoo %>%
+  filter(str_detect(string = culprit_name, pattern = "Dr. |Proff. |Cptn. |General|Captain|Professor|Sheriff|Officer")) %>%
+group_by(motive,culprit_name) %>%
+  summarise(times_commited =n())
+
+
+ggplot(prof, aes(x = motive, y = times_commited, fill = motive)) +
+ geom_col() +
+  coord_flip()
+```
+
+<h4> This bar graph shows the amount of episodes that have certain ratings and we found out that most of the episodes in scooby doo have a rating on imdb between 7 - 8, with some outliers on both sides. </h4>
+
+```{r}
+scoobydoo %>%
+  mutate(imdb = as.numeric(imdb)) %>%
+  filter(!is.na(imdb)) %>%
+  ggplot() +
+    geom_bar(aes(x = imdb)) 
+```
+<h4> What we did was try to find out the mean rating of scooby doo episodes based on the television networks. What we found out was that cartoon network and cbs had the highest mean episode ratings. </h4>
+```{r}
+scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(network) %>%
+  summarise(imdb_mean = mean(as.numeric(imdb),na.rm = TRUE)) %>%
+ggplot() +
+  geom_col(aes(x = network,y = imdb_mean)) +
+  coord_flip()
+```
+
+<h4> When looking back at the ratings for each of the TV series we found out that, for the tv series with the highest was in fact the last series to have been produced being Mystery Incorporated, this could have been because it was the only Scooby-doo series with actually plot while at the same time many enjoying the villain Pericles and what he brought to the table while lowest ratings belonged to Shaggy and Scooby get a clue which might have been due to the fact that the rest of the gang was absent from that series leaving only those two, where it can be seen that many didn't enjoy that change. filtering the format into the TV series while grouping it by series name we summarized by the average ratings by each of the series and putting it unto the a geom.col </h4>
+
+```{r}
+  scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(series_name) %>%
+  summarise(ratings = mean(as.numeric(imdb),na.rm = TRUE)) %>%
+ggplot() +
+  geom_col(aes(x = series_name,y = ratings, fill = series_name)) +
+  coord_flip() + theme(legend.position = "None")
+```
+
+<h4> The visualization here shows how the audience was engaged for each network that a series of scooby-doo with the highest being of course Warner which owns the franchise, while the lowest being the CW a network that is mainly for adults </h4>
+
+```{r}
+scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(network) %>%
+  summarise(engagement_mean = mean(as.numeric(engagement),na.rm = TRUE)) %>%
+ggplot() +
+  geom_col(aes(x = network,y = engagement_mean)) +
+  coord_flip()
+```
+
+```{r}
+scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(series_name) %>%
+  summarise(engagement_mean = mean(as.numeric(engagement),na.rm = TRUE)) %>%
+ggplot() +
+  geom_col(aes(x = series_name,y = engagement_mean)) +
+  coord_flip()
+```
+
+
+<h4> The visualization holds the amount of criminals in the Scooby Doo over the years. The code, due to the expansive amount of series, was enlarged to have a height of four and a width of seven. Ignoring the negative continuity of the Scooby Doo shows, if the goal of the gang was to reduce and maybe even achieve the lack of monster based attacks on the places they explore, the endeavor seems to be fruitless as the dots on the graph remain stagnant despite all of their hard work. An observation of a sudden jump in criminals teaming up together can be seen in recent years in all actuality. </h4>
+
+```{r, fig.width = 7, fig.height = 4}
+scoobydoo %>%
+  filter(str_detect(string = series_name, pattern = "Scooby")) %>%
+  ggplot() +
+  geom_point(aes(x = date_aired, y = culprit_amount, color = series_name))
+```
+<h4> The bar plot represent zoinks: the catchphrase from the fan favorite character Shaggy Rogers, in which he said the amount in each series that he was present in, the highest amount being in the Scooby-doo and Scrappy-doo tv series  which is surprising because of how that was one of the lowest rating of the franchise to date </h4>
+
+```{r}
+DS <- scoobydoo %>%
+  filter(str_detect(string = series_name, pattern = "Scooby")) %>%
+  select(series_name, zoinks) %>%
+  group_by(series_name) %>%
+  summarize(zoinks_amount = n())
+
+ggplot(DS, aes(x = series_name, y = zoinks_amount, fill = series_name)) + geom_bar(stat = "identity") + coord_flip() +
+  theme(legend.position = "None")
+```
+
+
+<h4> The visualization offers a in-depth look at the places where the most populous species in the  series reside. To process the multiple values in the monster cells, the commands of `seperate()` and `pivot_longer()` to splice all of the monster values into separate columns. The created variable *monsterNum* helps with this process to iteratively create the needed columns. Urban locations often attract the most varieties of monsters in Scooby Doo lore, with Rural places in second place and Forest and Desert biomes tying with each other for third. This is indicative of the flexibility of Human-Populated areas to house real monsters. </h4>
+
+```{r}
+monsterNum <- max(scoobydoo$monster_amount)
+
+scoobydoo %>%
+  select(index, monster_species, setting_terrain) %>%
+  separate(monster_species, sep = ",", into = paste0("monsters_species", 1:monsterNum)) %>%
+  pivot_longer(cols = starts_with("monsters_species"), names_to = "monsterNum", values_to = "monster_species") %>%
+  filter(!is.na(monster_species)) %>%
+  group_by(monster_species, setting_terrain) %>%
+  count(monster_species) %>%
+  arrange(desc(n)) %>%
+  filter(monster_species != "NULL") %>%
+  filter(monster_species %in% c("Human", "Alien", "Demon", "Cartoon", "Hound", "Dinosaur", "Robot", "Sea-Monster", "Beast", "Object")) %>%
+  ggplot() +
+  geom_bar(aes(x = setting_terrain, fill = monster_species)) +
+  coord_flip()
+```
+
+<h4> Leading into the next extra tidbit about monsters with respect to their habitats, the visualization was altered to show the actual amount that resides in each of the biomes. It achieve this, the section starting from `group_by` to `arrange` have been deleted. The leading species in appearance is Human, as the primary premise of the show is about un-masking the fake beasts of the night. However, the gang has went up against real monsters, and an Urban setting remains at the number one spot with the most types of monsters and the most dense amount of monsters in the whole Scooby Doo Lore. </h4>
+
+```{r}
+monsterNum <- max(scoobydoo$monster_amount)
+
+scoobydoo %>%
+  select(index, monster_species, setting_terrain) %>%
+  separate(monster_species, sep = ",", into = paste0("monsters_species", 1:monsterNum)) %>%
+  pivot_longer(cols = starts_with("monsters_species"), names_to = "monsterNum", values_to = "monster_species") %>%
+  filter(!is.na(monster_species)) %>%
+  filter(monster_species != "NULL") %>%
+  filter(monster_species %in% c("Human", "Alien", "Demon", "Cartoon", "Hound", "Dinosaur", "Robot", "Sea-Monster", "Beast", "Object")) %>%
+  ggplot() +
+  geom_bar(aes(x = setting_terrain, fill = monster_species)) +
+  coord_flip()
+```
+
+
+
+<h4> This data adds a new column that are just the special characters that appear in scooby doo episodes, the characters being: batman, Scooby Dum, Scrappy, The Hex Girls, and Blue Falcon. I manage to find out how many episodes a special character had shown up in the series, which is 225 episodes! </h4>
+
+
+```{r}
+batsdt <- scoobydoo %>%
+  filter(str_detect(string = batman, pattern = "TRUE")) %>%
+  mutate(special = "batsdt")
+scoobydum <- scoobydoo %>%
+  filter(str_detect(string = scooby_dum, pattern = "TRUE" ))%>%
+  mutate(special = "scoobydum")
+scrappy <- scoobydoo %>%
+  filter(str_detect(string = scrappy_doo, pattern = "TRUE")) %>%
+  mutate(special = "scrappy")
+hex <- scoobydoo %>%
+  filter(str_detect(string = hex_girls, pattern = "TRUE")) %>%
+  mutate(special = "hex")
+falcon <- scoobydoo %>%
+  filter(str_detect(string = blue_falcon, pattern = "TRUE")) %>%
+  mutate(special = "falcon")
+rbind(batsdt, scoobydum, scrappy, hex, falcon)
+```
+
+<hr The two sets of code below show the longest 'Meddling Kids' phrase in the entirety of Scooby Doo lore. Achieved by assorting everything using the `nchar()` command. The two villains who are called "Dayton Knight" and "Poetry Slam Promotor" have the longest sectors of these phrases, with Dayton Knight speaking the first portion and Poetry Slam Promotor having the last. Combined, it results in the following phrase: "If it wasn't for that meddling lawyer didn't discover that surprise envelope with evidence that proved who the toxic mutant really was and famous singer/award-winning, multi-platinum, alternate pop maverick, Halsey!" </h4>
+
+```{r}
+scoobydoo %>%
+  filter(if_it_wasnt_for != "NULL") %>%
+  select(if_it_wasnt_for, culprit_name) %>%
+  arrange(desc(nchar(if_it_wasnt_for))) %>%
+  head(1)
+```
+
+```{r}
+scoobydoo %>%
+  filter(and_that != "NULL") %>%
+  select(and_that, culprit_name) %>%
+  arrange(desc(nchar(and_that))) %>%
+  head(1)
+```
