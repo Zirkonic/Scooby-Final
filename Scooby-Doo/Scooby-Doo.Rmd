@@ -1,0 +1,150 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(dplyr)
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2021-07-13')
+tuesdata <- tidytuesdayR::tt_load(2021, week = 29)
+scoobydoo <- tuesdata$scoobydoo
+scoobydoo <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-13/scoobydoo.csv')
+```
+
+```{r}
+scoobydoo
+```
+```{r}
+scoobydoo %>%
+  mutate(imdb = as.numeric(imdb)) %>%
+  filter(!is.na(imdb)) %>%
+  filter(imdb > 9) %>%
+  select(title,imdb) %>%
+  
+```
+```{r}
+prof <- scoobydoo %>%
+  filter(str_detect(string = culprit_name, pattern = "Dr. |Proff. |Cptn. |General|Captain|Professor|Sheriff|Officer")) %>%
+group_by(motive,culprit_name) %>%
+  summarise(times_commited =n())
+
+
+ggplot(prof, aes(x = motive, y = times_commited)) +
+ geom_col() +
+  coord_flip()
+```
+
+
+```{r}
+scoobydoo %>%
+  mutate(imdb = as.numeric(imdb)) %>%
+  filter(!is.na(imdb)) %>%
+  ggplot() +
+    geom_bar(aes(x = imdb)) 
+```
+
+```{r}
+scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(network) %>%
+  summarise(imdb_mean = mean(as.numeric(imdb),na.rm = TRUE)) %>%
+ggplot() +
+  geom_col(aes(x = network,y = imdb_mean)) +
+  coord_flip()
+```
+```{r}
+scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(series_name) %>%
+  summarise(imdb_mean = mean(as.numeric(imdb),na.rm = TRUE)) %>%
+ggplot() +
+  geom_col(aes(x = series_name,y = imdb_mean)) +
+  coord_flip()
+```
+
+
+```{r}
+scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(network) %>%
+  summarise(engagement_mean = mean(as.numeric(engagement),na.rm = TRUE)) %>%
+ggplot() +
+  geom_col(aes(x = network,y = engagement_mean)) +
+  coord_flip()
+```
+```{r}
+scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(series_name) %>%
+  summarise(engagement_mean = mean(as.numeric(engagement),na.rm = TRUE)) %>%
+ggplot() +
+  geom_col(aes(x = series_name,y = engagement_mean)) +
+  coord_flip()
+```
+
+```{r}
+scoobydoo %>%
+  filter(format == "TV Series") %>%
+  group_by(network, series_name, format) %>%
+  summarise()
+```
+
+
+```{r, fig.width = 7, fig.height = 4}
+scoobydoo %>%
+  filter(str_detect(string = series_name, pattern = "Scooby")) %>%
+  ggplot() +
+  geom_point(aes(x = date_aired, y = culprit_amount, color = series_name))
+```
+
+```{r}
+DS <- scoobydoo %>%
+  filter(str_detect(string = series_name, pattern = "Scooby")) %>%
+  select(series_name, zoinks) %>%
+  group_by(series_name) %>%
+  summarize(zoinks_amount = n())
+
+ggplot(DS, aes(x = series_name, y = zoinks_amount, fill = series_name)) + geom_bar(stat = "identity") + coord_flip() +
+  theme(legend.position = "None")
+```
+
+```{r}
+monsterNum <- max(scoobydoo$monster_amount)
+
+scoobydoo %>%
+  select(index, monster_species, setting_terrain) %>%
+  separate(monster_species, sep = ",", into = paste0("monsters_species", 1:monsterNum)) %>%
+  pivot_longer(cols = starts_with("monsters_species"), names_to = "monsterNum", values_to = "monster_species") %>%
+  filter(!is.na(monster_species)) 
+```
+
+
+
+```{r}
+monsterNum <- max(scoobydoo$monster_amount)
+
+scoobydoo %>%
+  select(index, monster_species, setting_terrain) %>%
+  separate(monster_species, sep = ",", into = paste0("monsters_species", 1:monsterNum)) %>%
+  pivot_longer(cols = starts_with("monsters_species"), names_to = "monsterNum", values_to = "monster_species") %>%
+  filter(!is.na(monster_species)) %>%
+  group_by(monster_species, setting_terrain) %>%
+  count(monster_species) %>%
+  arrange(desc(n)) %>%
+  filter(monster_species != "NULL") %>%
+  filter(monster_species %in% c("Human", "Alien", "Demon", "Cartoon", "Hound", "Dinosaur", "Robot", "Sea-Monster", "Beast", "Object")) %>%
+  ggplot() +
+  geom_bar(aes(x = setting_terrain, fill = monster_species)) +
+  coord_flip()
+```
